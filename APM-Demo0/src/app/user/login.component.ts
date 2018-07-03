@@ -23,7 +23,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     this.store.pipe(
-      select('user'),
+      select('users'),
       filter(user => user != null)
     ).subscribe(user => {
       this.maskUserName = user.maskUserName;
