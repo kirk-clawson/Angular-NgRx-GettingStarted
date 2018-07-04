@@ -1,10 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-
 import { Product } from '../product';
-import { ProductService } from '../product.service';
 import { select, Store } from '@ngrx/store';
-import { getCurrentProduct, getShowProductCode, State } from '../state/product.reducer';
+import { getCurrentProduct, getError, getProducts, getShowProductCode, State } from '../state/product.reducer';
 import * as productActions from '../state/product.actions';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'pm-product-list',
@@ -13,30 +13,24 @@ import * as productActions from '../state/product.actions';
 })
 export class ProductListComponent implements OnInit, OnDestroy {
   pageTitle = 'Products';
-  errorMessage: string;
 
-  displayCode: boolean;
+  products$: Observable<Product[]>;
+  errorMessage$: Observable<string>;
+  displayCode$: Observable<boolean>;
+  selectedProductId$: Observable<number | null>;
 
-  products: Product[];
-
-  // Used to highlight the selected product in the list
-  selectedProduct: Product | null;
-
-  constructor(private productService: ProductService, private store: Store<State>) { }
+  constructor(private store: Store<State>) { }
 
   ngOnInit(): void {
-    this.store.pipe(select(getCurrentProduct)).subscribe(
-      currentProduct => this.selectedProduct = currentProduct
-    );
+    this.store.dispatch(new productActions.Load());
 
-    this.productService.getProducts().subscribe(
-      (products: Product[]) => this.products = products,
-      (err: any) => this.errorMessage = err.error
+    this.products$ = this.store.pipe(select(getProducts));
+    this.errorMessage$ = this.store.pipe(select(getError));
+    this.displayCode$ = this.store.pipe(select(getShowProductCode));
+    this.selectedProductId$ = this.store.pipe(
+      select(getCurrentProduct),
+      map(product => product != null ? product.id : null)
     );
-
-    this.store.pipe(
-      select(getShowProductCode)
-    ).subscribe(showProductCode => this.displayCode = showProductCode);
   }
 
   ngOnDestroy(): void {
